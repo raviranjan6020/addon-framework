@@ -78,6 +78,12 @@ type AgentAddonOptions struct {
 	// +optional
 	HostedModeEnabled bool
 
+	// HostingNamespaceEnabled places the hosting-cluster resources of each Hosted-mode ManagedClusterAddOn in
+	// its own namespace (utils.HostingNamespace) instead of the shared install namespace. Set it before any
+	// ManagedClusterAddOn of this addon is created.
+	// +optional
+	HostingNamespaceEnabled bool
+
 	// HostedModeInfoFunc returns whether an addon is in hosted mode, and its hosting cluster.
 	HostedModeInfoFunc func(addon *addonapiv1beta1.ManagedClusterAddOn, cluster *clusterv1.ManagedCluster) (string, string)
 

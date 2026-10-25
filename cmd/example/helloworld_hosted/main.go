@@ -91,6 +91,7 @@ func runController(ctx context.Context, kubeConfig *rest.Config) error {
 		WithGetValuesFuncs(helloworld.GetDefaultValues, addonfactory.GetValuesFromAddonAnnotation).
 		WithAgentRegistrationOption(registrationOption).
 		WithAgentHostedModeEnabledOption().
+		WithHostingNamespaceEnabledOption().
 		WithManagedClusterClient(clusterClient).
 		BuildTemplateAgentAddon()
 	if err != nil {

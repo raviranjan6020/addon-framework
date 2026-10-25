@@ -99,6 +99,13 @@ func (f *AgentAddonFactory) WithAgentHostedModeEnabledOption() *AgentAddonFactor
 	return f
 }
 
+// WithHostingNamespaceEnabledOption gives every Hosted-mode instance of the addon its own namespace on the
+// hosting cluster. Templates get it as .HostingInstallNamespace.
+func (f *AgentAddonFactory) WithHostingNamespaceEnabledOption() *AgentAddonFactory {
+	f.agentAddonOptions.HostingNamespaceEnabled = true
+	return f
+}
+
 // WithAgentHostedInfoFn sets the function to get the hosting cluster of an addon in the hosted mode.
 func (f *AgentAddonFactory) WithAgentHostedInfoFn(
 	infoFn func(*addonapiv1beta1.ManagedClusterAddOn, *clusterv1.ManagedCluster) (string, string)) *AgentAddonFactory {

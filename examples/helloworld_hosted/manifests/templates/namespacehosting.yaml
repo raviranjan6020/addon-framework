@@ -1,3 +1,5 @@
+{{- /* The framework creates a per-instance hosting namespace when HostingInstallNamespace is set. */ -}}
+{{- if not .HostingInstallNamespace }}
 # Make sure the AddonInstallNamespace exists on the cluster where the addon agent pod deploys
 apiVersion: v1
 kind: Namespace
@@ -7,4 +9,4 @@ metadata:
     addon.open-cluster-management.io/hosted-manifest-location: hosting
   labels:
     addon.open-cluster-management.io/namespace: "true"
-
+{{- end }}

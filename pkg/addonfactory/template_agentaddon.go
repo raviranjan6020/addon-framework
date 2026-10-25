@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/klog/v2"
@@ -11,9 +13,14 @@ import (
 	addonapiv1beta1 "open-cluster-management.io/api/addon/v1beta1"
 	clusterv1 "open-cluster-management.io/api/cluster/v1"
 
+	"open-cluster-management.io/addon-framework/pkg/addonmanager/constants"
 	"open-cluster-management.io/addon-framework/pkg/agent"
 	"open-cluster-management.io/addon-framework/pkg/assets"
+	"open-cluster-management.io/addon-framework/pkg/utils"
 )
+
+// hostingAddonAnnotationKey records which ManagedClusterAddOn (<cluster>/<addon>) owns a hosting namespace.
+const hostingAddonAnnotationKey = "addon.open-cluster-management.io/hosting-addon"
 
 // templateBuiltinValues includes the built-in values for template agentAddon.
 // the values for template config should begin with an uppercase letter, so we need convert it to Values by StructToValues.
@@ -82,6 +89,10 @@ func (a *TemplateAgentAddon) Manifests(
 		objects = append(objects, object)
 	}
 
+	if installMode, _ := a.agentAddonOptions.HostedModeInfoFunc(addon, cluster); a.hostingNamespaceEnabled(installMode) {
+		objects = append(objects, hostingNamespace(addon))
+	}
+
 	if a.trimCRDDescription {
 		objects = trimCRDDescription(objects)
 	}
@@ -146,7 +157,32 @@ func (a *TemplateAgentAddon) getBuiltinValues(
 
 	builtinValues.InstallMode, _ = a.agentAddonOptions.HostedModeInfoFunc(addon, cluster)
 
-	return StructToValues(builtinValues), nil
+	values := StructToValues(builtinValues)
+	// Only injected when opted in, so existing templates and user values are unchanged otherwise.
+	if a.hostingNamespaceEnabled(builtinValues.InstallMode) {
+		values["HostingInstallNamespace"] = utils.HostingNamespace(addon.Namespace, addon.Name)
+		values["HostedInstanceID"] = utils.HostedInstanceID(addon.Namespace, addon.Name)
+	}
+	return values, nil
+}
+
+func (a *TemplateAgentAddon) hostingNamespaceEnabled(installMode string) bool {
+	return a.agentAddonOptions.HostingNamespaceEnabled && installMode == constants.InstallModeHosted
+}
+
+// hostingNamespace is the namespace the framework creates on the hosting cluster for one instance.
+func hostingNamespace(addon *addonapiv1beta1.ManagedClusterAddOn) *corev1.Namespace {
+	return &corev1.Namespace{
+		TypeMeta: metav1.TypeMeta{APIVersion: "v1", Kind: "Namespace"},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: utils.HostingNamespace(addon.Namespace, addon.Name),
+			Annotations: map[string]string{
+				addonapiv1beta1.HostedManifestLocationAnnotationKey: addonapiv1beta1.HostedManifestLocationHostingValue,
+				hostingAddonAnnotationKey:                           addon.Namespace + "/" + addon.Name,
+			},
+			Labels: map[string]string{"addon.open-cluster-management.io/namespace": "true"},
+		},
+	}
 }
 
 func (a *TemplateAgentAddon) getDefaultValues(

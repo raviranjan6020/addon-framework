@@ -2,7 +2,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: helloworldhosted-agent
-  namespace: {{ .AddonInstallNamespace }}
+  namespace: {{ if .HostingInstallNamespace }}{{ .HostingInstallNamespace }}{{ else }}{{ .AddonInstallNamespace }}{{ end }}
   annotations:
     addon.open-cluster-management.io/hosted-manifest-location: hosting
 rules:

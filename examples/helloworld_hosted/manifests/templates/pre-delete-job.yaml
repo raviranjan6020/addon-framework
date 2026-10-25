@@ -2,7 +2,7 @@ kind: Job
 apiVersion: batch/v1
 metadata:
   name: helloworldhosted-cleanup-configmap
-  namespace: {{ .AddonInstallNamespace }}
+  namespace: {{ if .HostingInstallNamespace }}{{ .HostingInstallNamespace }}{{ else }}{{ .AddonInstallNamespace }}{{ end }}
   annotations:
     addon.open-cluster-management.io/addon-pre-delete: ""
     addon.open-cluster-management.io/hosted-manifest-location: hosting
